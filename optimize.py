@@ -23,23 +23,57 @@ from random import random
 import argparse
 
 
-def optimize(script, name):
+def optimize(music, name):
     """Call if importing as a module."""
-    pass
+    search = MetaSearch(music, name)
+    search.iterate_script()
 
 
-class MainFileIteration():
+class MetaSearch():
     """Controls the primary iteration over the file."""
 
-    def __init__(self):
-        pass
+    def __init__(self, music, name):
+        self.music = music
+        self.song_name = name
+        # minimum search size to see space savings is 4
+        self.search_size = 4
+        # Start at the beginning of the file
+        self.main_file_index = 0
+
+    def iterate_script(self):
+        while self.main_file_index < len(self.music):
+            # Set the parameters for a new search
+            search_array = []
+            # TODO: disallow searching past the end of the file
+            for index in range(self.main_file_index,
+                               self.main_file_index + self.search_size):
+                search_array.append(self.music[index])
+                self.check_matches(search_array)
+            self.main_file_index += 1
+
+    def check_matches(self, search):
+        """Iterate over the file to check for search matches."""
+        match_indexes = []
+        for file_index in range(0, len(self.music)):
+            if __debug__:
+                print('index:', file_index)
+            # See if the line we're on matches the first line in the search
+            if search[0] == self.music[file_index]:
+                # Innocent until proven guilty
+                search_match = True
+                # We need to check the other values
+                for search_index in range(0, len(search)):
+                    try:
+                        if(search[search_index] !=
+                                self.music[search_index + file_index]):
+                            search_match = False
+                            break
+                    except IndexError:
+                        # Past EOF, so it's not a match
+                        search_match = False
+                        break
 
 
-class SubSearch():
-    """Based on the given query, find all matches and their indexes."""
-
-    def __init__(self):
-        pass
 
 
 def main():
@@ -49,7 +83,9 @@ def main():
     parser.add_argument('asm', help="script input file")
     parser.add_argument('name', help="name of the song (eg. \"YeetBattle\")")
     args = parser.parse_args()
-    optimize(args.asm, args.name)
+    with open(args.asm, 'r') as music:
+        file_array = music.readlines()
+    optimize(file_array, args.name)
 
 
 if __name__ == "__main__":
