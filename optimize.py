@@ -35,21 +35,27 @@ class MetaSearch():
     def __init__(self, music, name):
         self.music = music
         self.song_name = name
-        # minimum search size to see space savings is 4
-        self.search_size = 4
         # Start at the beginning of the file
         self.main_file_index = 0
 
     def iterate_script(self):
         while self.main_file_index < len(self.music):
-            # Set the parameters for a new search
-            search_array = []
-            # TODO: disallow searching past the end of the file
-            for index in range(self.main_file_index,
-                               self.main_file_index + self.search_size):
-                search_array.append(self.music[index])
-                self.check_matches(search_array)
+            self.search_in_place()
             self.main_file_index += 1
+
+    def search_in_place(self):
+        # minimum search size to see space savings is 4
+        search_size = 4
+        # Set the parameters for a new search
+        search_array = []
+        # TODO: disallow searching past the end of the file
+        for index in range(self.main_file_index,
+                           self.main_file_index + search_size):
+            search_array.append(self.music[index])
+            print('found', len(self.check_matches(search_array)), 'match(es)')
+            # TODO: sort out matches that conflict
+            # TODO: dynamic search search size
+            # TODO: pick most optimal search size and use it
 
     def check_matches(self, search):
         """Iterate over the file to check for search matches."""
@@ -72,7 +78,9 @@ class MetaSearch():
                         # Past EOF, so it's not a match
                         search_match = False
                         break
-
+                if search_match:
+                    match_indexes.append(file_index)
+        return match_indexes
 
 
 
