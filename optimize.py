@@ -26,26 +26,72 @@ import argparse
 def optimize(music, name):
     """Call if importing as a module."""
     search = MetaSearch(music, name)
-    search.iterate_script()
+    for line in search.iterate_script():
+        print(line)
 
 
-# TODO: pick most optimal search size and use it
+# TODO: replace searches
 class MetaSearch():
     """Controls the primary iteration over the file."""
 
     def __init__(self, music, name):
         self.music = music
-        self.song_name = name
+        self.song_name = 'Music_' + name + '_Branch_'
         # Start at the beginning of the file
         self.main_file_index = 0
 
     def iterate_script(self):
+        branch = 1
+        ditty_append = []
         while self.main_file_index < len(self.music):
-            self.pick_optimial_search(self.search_in_place())
-            self.main_file_index += 1
+            search_at_index = self.search_in_place()
+            to_replace = self.pick_optimial_search(search_at_index[0],
+                                                   search_at_index[1])
+            print('to_replace:', to_replace)
+            if to_replace is not None:
+                self.replace_matches(to_replace, branch)
+                # Build the ditty to append
+                ditty_append.append(self.song_name + str(branch) + ':\n')
+                ditty_append.extend(to_replace[1])
+                ditty_append.append('endchannel\n\n')
+                branch += 1
+                # We messed with the size of the list, so we're restarting
+                self.main_file_index = 0
+            else:
+                self.main_file_index += 1
+        self.music.extend(ditty_append)
+        return(self.music)
 
-    def pick_optimial_search(self, results):
-        print(results)
+    def replace_matches(self, target, branch):
+        target_indexes = target[0]
+        replace_length = len(target[1])
+        for target_index in target_indexes:
+            for unused_var in range(0, replace_length):
+                print('ti:', int(target_index))
+                self.music.pop([target_index])
+            self.music.insert(target_index,
+                              'callchannel' +
+                              self.song_name +
+                              str(branch) + '\n')
+
+    def pick_optimial_search(self, results, past_searches):
+        if len(results) <= 1:
+            return None
+        print(past_searches)
+        print(results, results[-1])
+        best_search = 0
+        for results_index in range(1, len(results) - 1):
+            if(self.byte_savings_formula(results,
+                                         past_searches,
+                                         results_index) >
+                self.byte_savings_formula(results,
+                                          past_searches,
+                                          results_index - 1)):
+                best_search = results_index
+        return (results[best_search], past_searches[best_search])
+
+    def byte_savings_formula(self, results, search, index):
+        return (len(results[index]) - 1) * len(search[index])
 
     def search_in_place(self):
         # minimum search size to see space savings is 4
