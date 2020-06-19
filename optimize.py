@@ -46,23 +46,28 @@ class MetaSearch():
     def search_in_place(self):
         # minimum search size to see space savings is 4
         search_size = 4
-        # Set the parameters for a new search
-        search_array = []
-        # TODO: disallow searching past the end of the file
-        for index in range(self.main_file_index,
-                           self.main_file_index + search_size):
-            search_array.append(self.music[index])
+        # 2D list for calculating ideal optimizations
+        search_results = []
+        while not search_is_over(search_results):
+            # Set the parameters for a new search
+            search_array = []
+            for index in range(self.main_file_index,
+                               self.main_file_index + search_size):
+                try:
+                    search_array.append(self.music[index])
+                except IndexError:
+                    # Can't search past the end of the file
+                    pass
             print('found', len(self.check_matches(search_array)), 'match(es)')
-            # TODO: sort out matches that conflict
-            # TODO: dynamic search search size
-            # TODO: pick most optimal search size and use it
+            search_results.append(self.check_matches(search_array))
+            # Increment search length to find optimum savings
+            search_size += 1
+        # TODO: pick most optimal search size and use it
 
     def check_matches(self, search):
         """Iterate over the file to check for search matches."""
         match_indexes = []
         for file_index in range(0, len(self.music)):
-            if __debug__:
-                print('index:', file_index)
             # See if the line we're on matches the first line in the search
             if search[0] == self.music[file_index]:
                 # Innocent until proven guilty
@@ -80,8 +85,34 @@ class MetaSearch():
                         break
                 if search_match:
                     match_indexes.append(file_index)
+        # Sort out conflicts
+        conflicts = []
+        for match in match_indexes:
+            try:
+                if(match_indexes[match_indexes.index(match) + 1]
+                        < match + len(search)):
+                    conflicts.append(match_indexes.index(match) + 1)
+            except IndexError:
+                # We reached the end, nothing to be concerned over
+                pass
+        # Iterate through the conflicts backwards to avoid messing up indexes
+        for conflict_index in range(len(conflicts) - 1, -1, -1):
+            print(match_indexes)
+            print('trying to rm:', conflicts[conflict_index])
+            match_indexes.pop(conflicts[conflict_index])
+            print('success rm:', conflicts[conflict_index])
         return match_indexes
 
+
+def search_is_over(results):
+    # If the list is empty, don't bother (avoids IndexError)
+    print('results:', results)
+    if len(results) < 1:
+        return False
+    if len(results[-1]) == 1:
+        return True
+    else:
+        return False
 
 
 def main():
