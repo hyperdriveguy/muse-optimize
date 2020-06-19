@@ -29,6 +29,7 @@ def optimize(music, name):
     search.iterate_script()
 
 
+# TODO: pick most optimal search size and use it
 class MetaSearch():
     """Controls the primary iteration over the file."""
 
@@ -40,14 +41,18 @@ class MetaSearch():
 
     def iterate_script(self):
         while self.main_file_index < len(self.music):
-            self.search_in_place()
+            self.pick_optimial_search(self.search_in_place())
             self.main_file_index += 1
+
+    def pick_optimial_search(self, results):
+        print(results)
 
     def search_in_place(self):
         # minimum search size to see space savings is 4
         search_size = 4
-        # 2D list for calculating ideal optimizations
+        # 2D lists for calculating ideal optimizations
         search_results = []
+        search_attempts = []
         while not search_is_over(search_results):
             # Set the parameters for a new search
             search_array = []
@@ -58,11 +63,17 @@ class MetaSearch():
                 except IndexError:
                     # Can't search past the end of the file
                     pass
+            # Only possible when IndexError occurs above
+            if len(search_array) < 4:
+                break
+            search_attempts.append(search_array)
             print('found', len(self.check_matches(search_array)), 'match(es)')
             search_results.append(self.check_matches(search_array))
             # Increment search length to find optimum savings
             search_size += 1
-        # TODO: pick most optimal search size and use it
+        # Yes, I'm returning a tuple containing two different 2D lists
+        # I'm sorry.
+        return (search_results, search_attempts)
 
     def check_matches(self, search):
         """Iterate over the file to check for search matches."""
