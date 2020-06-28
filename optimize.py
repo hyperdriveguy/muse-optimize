@@ -1,5 +1,5 @@
 """
-This module contains the methods for optimizing pokcrystal music scripts.
+This module contains the methods for optimizing pokecrystal music scripts.
 
 Copyright (C) 2020  nephitejnf and hyperdriveguy
 
@@ -26,8 +26,8 @@ import argparse
 def optimize(music, name):
     """Call if importing as a module."""
     search = MetaSearch(music, name)
-    for line in search.iterate_script():
-        print(line)
+    with open('/tmp/yee', 'w') as test:
+        test.writelines(search.iterate_script())
 
 
 # TODO: replace searches
@@ -53,7 +53,7 @@ class MetaSearch():
                 # Build the ditty to append
                 ditty_append.append(self.song_name + str(branch) + ':\n')
                 ditty_append.extend(to_replace[1])
-                ditty_append.append('endchannel\n\n')
+                ditty_append.append('\tendchannel\n\n')
                 branch += 1
                 # We messed with the size of the list, so we're restarting
                 self.main_file_index = 0
@@ -66,11 +66,17 @@ class MetaSearch():
         target_indexes = target[0]
         replace_length = len(target[1])
         for target_index in target_indexes:
+            target_index = int(target_index)
             for unused_var in range(0, replace_length):
                 print('ti:', int(target_index))
-                self.music.pop([target_index])
+                print(len(self.music))
+                try:
+                    print(self.music[target_index])
+                    self.music.pop(target_index)
+                except IndexError:
+                    print("Can't pop: reached EOF")
             self.music.insert(target_index,
-                              'callchannel' +
+                              '\tcallchannel ' +
                               self.song_name +
                               str(branch) + '\n')
 
