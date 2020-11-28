@@ -1,7 +1,7 @@
 """
 This module contains the methods for optimizing pokecrystal music scripts.
 
-Copyright (C) 2020  nephitejnf and hyperdriveguy
+Copyright (C) 2020 hyperdriveguy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -26,7 +26,7 @@ import argparse
 def optimize(music, name):
     """Call if importing as a module."""
     search = MetaSearch(music, name)
-    with open('/tmp/yee', 'w') as test:
+    with open('/tmp/yee.asm', 'w') as test:
         test.writelines(search.iterate_script())
 
 
@@ -55,6 +55,8 @@ class MetaSearch():
                 ditty_append.extend(to_replace[1])
                 ditty_append.append('\tendchannel\n\n')
                 branch += 1
+                #print(self.music)
+                #input()
                 # We messed with the size of the list, so we're restarting
                 self.main_file_index = 0
             else:
@@ -62,23 +64,22 @@ class MetaSearch():
         self.music.extend(ditty_append)
         return(self.music)
 
+
     def replace_matches(self, target, branch):
         target_indexes = target[0]
         replace_length = len(target[1])
-        for target_index in target_indexes:
-            target_index = int(target_index)
-            for unused_var in range(0, replace_length):
-                print('ti:', int(target_index))
-                print(len(self.music))
-                try:
-                    print(self.music[target_index])
-                    self.music.pop(target_index)
-                except IndexError:
-                    print("Can't pop: reached EOF")
-            self.music.insert(target_index,
+        print('target:')
+        print(target_indexes)
+        print(replace_length)
+        for target_index in range(len(target_indexes) - 1, -1, -1):
+            cur_replace_index = int(target_indexes[target_index])
+            for x in range(replace_length):
+                self.music.pop(cur_replace_index)
+            self.music.insert(cur_replace_index,
                               '\tcallchannel ' +
                               self.song_name +
                               str(branch) + '\n')
+
 
     def pick_optimial_search(self, results, past_searches):
         if len(results) <= 1:
