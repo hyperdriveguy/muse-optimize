@@ -1,3 +1,4 @@
+#!/usr/bin/python
 """
 This module contains the methods for optimizing pokecrystal music scripts.
 
@@ -19,18 +20,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 Full plain text license https://www.gnu.org/licenses/agpl-3.0.txt
 """
 
-from random import random
 import argparse
 
 
 def optimize(music, name):
-    """Call if importing as a module."""
+    """
+    Run optimizations the music.
+    
+    Call if importing as a module.
+    """
     search = MetaSearch(music, name)
-    with open('/tmp/yee.asm', 'w') as test:
-        test.writelines(search.iterate_script())
+    return search.iterate_script()
 
 
-# TODO: replace searches
 class MetaSearch():
     """Controls the primary iteration over the file."""
 
@@ -47,7 +49,6 @@ class MetaSearch():
             search_at_index = self.search_in_place()
             to_replace = self.pick_optimial_search(search_at_index[0],
                                                    search_at_index[1])
-            print('to_replace:', to_replace)
             if to_replace is not None:
                 self.replace_matches(to_replace, branch)
                 # Build the ditty to append
@@ -55,22 +56,18 @@ class MetaSearch():
                 ditty_append.extend(to_replace[1])
                 ditty_append.append('\tendchannel\n\n')
                 branch += 1
-                #print(self.music)
-                #input()
                 # We messed with the size of the list, so we're restarting
                 self.main_file_index = 0
             else:
                 self.main_file_index += 1
         self.music.extend(ditty_append)
+        print('Created {} different branches for callchannel optimizations'.format(branch - 1))
         return(self.music)
 
 
     def replace_matches(self, target, branch):
         target_indexes = target[0]
         replace_length = len(target[1])
-        print('target:')
-        print(target_indexes)
-        print(replace_length)
         for target_index in range(len(target_indexes) - 1, -1, -1):
             cur_replace_index = int(target_indexes[target_index])
             for x in range(replace_length):
@@ -84,8 +81,6 @@ class MetaSearch():
     def pick_optimial_search(self, results, past_searches):
         if len(results) <= 1:
             return None
-        print(past_searches)
-        print(results, results[-1])
         best_search = 0
         for results_index in range(1, len(results) - 1):
             if(self.byte_savings_formula(results,
@@ -112,15 +107,17 @@ class MetaSearch():
             for index in range(self.main_file_index,
                                self.main_file_index + search_size):
                 try:
-                    search_array.append(self.music[index])
+                    if not check_unoptimizable(self.music[index]):
+                        search_array.append(self.music[index])
                 except IndexError:
                     # Can't search past the end of the file
                     pass
             # Only possible when IndexError occurs above
             if len(search_array) < 4:
                 break
+            if len(self.check_matches(search_array)) == 0:
+                break
             search_attempts.append(search_array)
-            print('found', len(self.check_matches(search_array)), 'match(es)')
             search_results.append(self.check_matches(search_array))
             # Increment search length to find optimum savings
             search_size += 1
@@ -161,16 +158,25 @@ class MetaSearch():
                 pass
         # Iterate through the conflicts backwards to avoid messing up indexes
         for conflict_index in range(len(conflicts) - 1, -1, -1):
-            print(match_indexes)
-            print('trying to rm:', conflicts[conflict_index])
             match_indexes.pop(conflicts[conflict_index])
-            print('success rm:', conflicts[conflict_index])
         return match_indexes
+
+
+def check_unoptimizable(line):
+    if 'callchannel' in line:
+        return True
+    if 'loopchannel' in line:
+        return True
+    if 'musicheader' in line:
+        return True
+    if 'togglenoise' in line:
+        return True
+    if ':' in line:
+        return True
 
 
 def search_is_over(results):
     # If the list is empty, don't bother (avoids IndexError)
-    print('results:', results)
     if len(results) < 1:
         return False
     if len(results[-1]) == 1:
@@ -182,13 +188,17 @@ def search_is_over(results):
 def main():
     """For running as a standalone script."""
     parser = argparse.ArgumentParser(
-        description="A script for optimizing pokecrystal music.")
-    parser.add_argument('asm', help="script input file")
-    parser.add_argument('name', help="name of the song (eg. \"YeetBattle\")")
+        description='A script for optimizing pokecrystal music.')
+    parser.add_argument('asm', help='script input file')
+    parser.add_argument('output', help='optimized output file')
+    parser.add_argument('name', help='name of the song (eg. \"YeetBattle\")')
     args = parser.parse_args()
+
     with open(args.asm, 'r') as music:
         file_array = music.readlines()
-    optimize(file_array, args.name)
+    search = MetaSearch(file_array, args.name)
+    with open(args.output, 'w') as test:
+        test.writelines(search.iterate_script())
 
 
 if __name__ == "__main__":
